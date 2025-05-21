@@ -9,17 +9,48 @@ jobs:
     name: Verify Uploaded Packages
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout (required by GitHub CLI)
+        uses: actions/checkout@v3
+
+      - name: Install GitHub CLI and tools
+        run: |
+          sudo apt update
+          sudo apt install -y gh dpkg rpm
+
+      - name: Authenticate GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh auth setup-git
+
       - name: Print release info
         run: |
           echo "Release tag: ${{ github.event.release.tag_name }}"
           echo "Release name: ${{ github.event.release.name }}"
-          echo "Release assets: ${{ github.event.release.assets }}"
 
       - name: Download release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "You uploaded the .deb and .rpm manually."
-          echo "CI/CD triggered successfully after release was published."
-          echo "Extend this job to scan or deploy the files."
+          mkdir assets
+          cd assets
+          gh release download ${{ github.event.release.tag_name }}
+
+      - name: Inspect .deb files
+        run: |
+          echo "Inspecting .deb packages..."
+          for file in assets/*.deb; do
+            echo ":: Inspecting $file ::"
+            dpkg-deb --info "$file" || true
+            dpkg-deb --contents "$file" || true
+          done
+
+      - name: Inspect .rpm files
+        run: |
+          echo "Inspecting .rpm packages..."
+          for file in assets/*.rpm; do
+            echo ":: Inspecting $file ::"
+            rpm -qpi "$file" || true
+          done
 
       - name: Finish
-        run: echo "CI/CD pipeline completed for tag ${{ github.event.release.tag_name }}"
+        run: echo "✅ CI/CD pipeline completed for release tag ${{ github.event.release.tag_name }}"
