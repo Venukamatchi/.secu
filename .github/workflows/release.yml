@@ -1,0 +1,25 @@
+name: On Release - Verify & Announce
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  verify-release:
+    name: Verify Uploaded Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print release info
+        run: |
+          echo "Release tag: ${{ github.event.release.tag_name }}"
+          echo "Release name: ${{ github.event.release.name }}"
+          echo "Release assets: ${{ github.event.release.assets }}"
+
+      - name: Download release assets
+        run: |
+          echo "You uploaded the .deb and .rpm manually."
+          echo "CI/CD triggered successfully after release was published."
+          echo "Extend this job to scan or deploy the files."
+
+      - name: Finish
+        run: echo "CI/CD pipeline completed for tag ${{ github.event.release.tag_name }}"
